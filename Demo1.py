@@ -58,22 +58,36 @@ if __name__ == '__main__':
     # Edge Detection Kernel
     kernel = np.array([ [-1, -1, -1, -1, -1],
                         [-1, -1, -1, -1, -1],
-                    	[-1, -1, 23, -1, -1 ],
+                    	[-1, -1, 24, -1, -1 ],
                         [-1, -1, -1, -1, -1],
                         [-1, -1, -1, -1, -1] ])
     
     array = np.ones((3,3))
-    averaging_filter = np.multiply(array, 1/10)
+    averaging_filter = np.multiply(array, 1/25)
     
     # Convolve and Save Output
     output = convolve2D(image, averaging_filter)
     cv2.imwrite('HW2/Blurred.jpg', output)
     
 
-    output = processImage('/home/xpirr/workspace/python/DSP/HW2/CroppedTank.jpg')
-    output = convolve2D(image, kernel, padding=2)
-    cv2.imwrite('HW2/DConvolved.jpg', output)
+    # output = processImage('/home/xpirr/workspace/python/DSP/HW2/CroppedTank.jpg')
+    # output = convolve2D(image, kernel)
+    # cv2.imwrite('HW2/DConvolved.jpg', output)
 
     output = processImage('/home/xpirr/workspace/python/DSP/HW2/Blurred.jpg')
     outputx = convolve2D(output, kernel)
-    cv2.imwrite('HW2/2DConvolvedX.jpg', outputx)
+    cv2.imwrite('HW2/Kernel.jpg', outputx)
+
+    output = processImage('/home/xpirr/workspace/python/DSP/HW2/Resim6_8.jpg')
+    outputx = convolve2D(output, averaging_filter)
+    cv2.imwrite('HW2/ResimBlurred.jpg', outputx)
+
+    output = processImage('/home/xpirr/workspace/python/DSP/HW2/ResimBlurred.jpg')
+    outputx = convolve2D(output, kernel)
+    cv2.imwrite('HW2/ResimKenar.jpg', outputx)
+
+    img = processImage('/home/xpirr/workspace/python/DSP/HW2/ResimKenar.jpg')
+    imgK = processImage('/home/xpirr/workspace/python/DSP/HW2/Kernel.jpg')
+
+    conv = convolve2D(img, imgK)
+    cv2.imwrite('HW2/output.jpg', conv)
