@@ -5,7 +5,7 @@ import numpy as np
 
 def convolve2D(image, kernel, padding=0, strides=1):
     # Cross Correlation
-    kernel = np.flipud(np.fliplr(kernel))
+    # kernel = np.flipud(np.fliplr(kernel))
 
     # Gather Shapes of Kernel + Image + Padding
     xKernShape = kernel.shape[0]
@@ -52,42 +52,70 @@ def processImage(image):
   return image
 
 if __name__ == '__main__':
+    # kernel = processImage('/home/xpirr/workspace/python/DSP/HW2/CroppedTank.jpg')
+    # img = processImage('/home/xpirr/workspace/python/DSP/HW2/Resim6_8.jpg')
+
+    # result = cv2.filter2D(img, -1, kernel)
+    # # Find the location of the maximum value in the result
+
+
     # Grayscale Image
-    image = processImage('/home/xpirr/workspace/python/DSP/HW2/CroppedTank.jpg')
+    
 
     # Edge Detection Kernel
     kernel = np.array([ [-1, -1, -1, -1, -1],
                         [-1, -1, -1, -1, -1],
-                    	[-1, -1, 24, -1, -1 ],
+                    	[-1, -1, 24, -1, -1],
                         [-1, -1, -1, -1, -1],
                         [-1, -1, -1, -1, -1] ])
     
     array = np.ones((3,3))
-    averaging_filter = np.multiply(array, 1/25)
+    blur = np.array(
+        [[1/16, 1/8, 1/16],
+        [1/8, 1/4, 1/8],
+        [1/16, 1/8, 1/16]]
+    )
     
-    # Convolve and Save Output
-    output = convolve2D(image, averaging_filter)
-    cv2.imwrite('HW2/Blurred.jpg', output)
-    
+    croppedTank = processImage('/home/xpirr/workspace/python/DSP/HW2/CroppedTank2.jpg')
+    blurredTank = convolve2D(croppedTank, blur, padding=0)
+    tankShape = convolve2D(blurredTank, kernel)
 
-    # output = processImage('/home/xpirr/workspace/python/DSP/HW2/CroppedTank.jpg')
-    # output = convolve2D(image, kernel)
-    # cv2.imwrite('HW2/DConvolved.jpg', output)
+    # cv2.imshow("Cropped Tank", croppedTank)
+    # cv2.imwrite("Blurred Tank.jpg", blurredTank)
+    cv2.imwrite("HW2/Tank Shape.jpg", tankShape)
 
-    output = processImage('/home/xpirr/workspace/python/DSP/HW2/Blurred.jpg')
-    outputx = convolve2D(output, kernel)
-    cv2.imwrite('HW2/Kernel.jpg', outputx)
 
-    output = processImage('/home/xpirr/workspace/python/DSP/HW2/Resim6_8.jpg')
-    outputx = convolve2D(output, averaging_filter)
-    cv2.imwrite('HW2/ResimBlurred.jpg', outputx)
+    img = processImage('/home/xpirr/workspace/python/DSP/HW2/Resim6_8.jpg')
+    blurredImg = convolve2D(img, blur, padding=0)
+    bwImg = convolve2D(blurredImg, kernel, padding=0)
 
-    output = processImage('/home/xpirr/workspace/python/DSP/HW2/ResimBlurred.jpg')
-    outputx = convolve2D(output, kernel)
-    cv2.imwrite('HW2/ResimKenar.jpg', outputx)
+    # cv2.imshow("Original Image", img)
+    # cv2.imshow("Blurred Image", blurredImg)
+    cv2.imwrite("HW2/Shapes of Image.jpg", bwImg)
 
-    img = processImage('/home/xpirr/workspace/python/DSP/HW2/ResimKenar.jpg')
-    imgK = processImage('/home/xpirr/workspace/python/DSP/HW2/Kernel.jpg')
 
-    conv = convolve2D(img, imgK)
-    cv2.imwrite('HW2/output.jpg', conv)
+    # OUTPUT = convolve2D(bwImg, tankShape, padding=0)
+
+    for i in range(1, 10):
+        print(i)
+        _tankShape = cv2.resize(tankShape, None, fx = i * .1, fy = i * .1)
+
+        OUTPUT = convolve2D(bwImg, _tankShape, padding=int(_tankShape.shape[0]/2))
+
+        threshold_value = .99 * np.max(OUTPUT)
+        _, thresholded = cv2.threshold(OUTPUT, threshold_value, 255, cv2.THRESH_BINARY)
+        nonzero = cv2.findNonZero(thresholded)
+
+        # Draw a rectangle around the matched area
+        for pt in nonzero:
+            x, y = pt[0]
+            h, w = _tankShape.shape
+            top_left = (x - w // 2, y - h // 2)
+            bottom_right = (top_left[0] + w, top_left[1] + h)
+            cv2.rectangle(img, top_left, bottom_right, 255)
+
+    print()
+    # Show the result
+    cv2.imshow('Matched Image', img)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
