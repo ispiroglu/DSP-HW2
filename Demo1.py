@@ -6,7 +6,7 @@ import glob
 
 def convolve2D(image, kernel, padding=0, strides=1):
     # Cross Correlation
-    # kernel = np.flipud(np.fliplr(kernel))
+    kernel = np.flipud(np.fliplr(kernel))
 
     # Gather Shapes of Kernel + Image + Padding
     xKernShape = kernel.shape[0]
@@ -44,7 +44,10 @@ def convolve2D(image, kernel, padding=0, strides=1):
                 except:
                     break
 
-    return output
+    return np.multiply(output, 1/50)
+
+# def convolve2D(img, kernel):
+#     return cv2.filter2D(img, -1, kernel)
 
 def getImages(path):
     images = []
@@ -77,9 +80,10 @@ def matchShape(image, shape, title, originalImage):
     for i in range(1, 10):
         _shape = cv2.resize(shape, None, fx = i * .1, fy = i * .1)
 
-        OUTPUT = convolve2D(image, _shape)
+        # OUTPUT = convolve2D(image, _shape, int(_shape.shape[0]/2))
+        OUTPUT = cv2.filter2D(image, -1, _shape) / 10
 
-        threshold_value = .99999 * np.max(OUTPUT)
+        threshold_value = .9999999 * np.max(OUTPUT)
         _, thresholded = cv2.threshold(OUTPUT, threshold_value, 255, cv2.THRESH_BINARY)
         nonzero = cv2.findNonZero(thresholded)
 
@@ -104,13 +108,13 @@ if __name__ == '__main__':
     images = getImages(dir)
 
     imageShapes = []
-    for image in images:
+    for idx, image in enumerate(images):
         img = cv2.cvtColor(src=image, code=cv2.COLOR_BGR2GRAY)
         img = processImage(img)
         imageShapes.append(img)
 
     for i, img in enumerate(imageShapes):
-        matchShape(img, tankShape, str(i + 1), images[i])
+        matchShape(img, tankShape, "Resim: " + str(i + 1), images[i])
 
     cv2.waitKey(0)
     cv2.destroyAllWindows()
