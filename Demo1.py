@@ -1,7 +1,8 @@
+import os
 import sys
 import cv2
 import numpy as np
-
+import glob
 
 def convolve2D(image, kernel, padding=0, strides=1):
     # Cross Correlation
@@ -22,7 +23,6 @@ def convolve2D(image, kernel, padding=0, strides=1):
     if padding != 0:
         imagePadded = np.zeros((image.shape[0] + padding*2, image.shape[1] + padding*2))
         imagePadded[int(padding):int(-1 * padding), int(padding):int(-1 * padding)] = image
-        print(imagePadded)
     else:
         imagePadded = image
 
@@ -46,76 +46,71 @@ def convolve2D(image, kernel, padding=0, strides=1):
 
     return output
 
-def processImage(image): 
-  image = cv2.imread(image) 
-  image = cv2.cvtColor(src=image, code=cv2.COLOR_BGR2GRAY) 
-  return image
+def getImages(path):
+    images = []
+    for img in glob.glob(path):
+        image = cv2.imread(img)
+        images.append(image)
 
-if __name__ == '__main__':
-    # kernel = processImage('/home/xpirr/workspace/python/DSP/HW2/CroppedTank.jpg')
-    # img = processImage('/home/xpirr/workspace/python/DSP/HW2/Resim6_8.jpg')
-
-    # result = cv2.filter2D(img, -1, kernel)
-    # # Find the location of the maximum value in the result
+    return images
 
 
-    # Grayscale Image
-    
-
-    # Edge Detection Kernel
+def processImage(image):
     kernel = np.array([ [-1, -1, -1, -1, -1],
                         [-1, -1, -1, -1, -1],
                     	[-1, -1, 24, -1, -1],
                         [-1, -1, -1, -1, -1],
                         [-1, -1, -1, -1, -1] ])
     
-    array = np.ones((3,3))
     blur = np.array(
         [[1/16, 1/8, 1/16],
         [1/8, 1/4, 1/8],
         [1/16, 1/8, 1/16]]
     )
-    
-    croppedTank = processImage('/home/xpirr/workspace/python/DSP/HW2/CroppedTank2.jpg')
-    blurredTank = convolve2D(croppedTank, blur, padding=0)
-    tankShape = convolve2D(blurredTank, kernel)
 
-    # cv2.imshow("Cropped Tank", croppedTank)
-    # cv2.imwrite("Blurred Tank.jpg", blurredTank)
-    cv2.imwrite("HW2/Tank Shape.jpg", tankShape)
+    image = convolve2D(image, blur)
+    image = convolve2D(image, kernel)
 
+    return image
 
-    img = processImage('/home/xpirr/workspace/python/DSP/HW2/Resim6_8.jpg')
-    blurredImg = convolve2D(img, blur, padding=0)
-    bwImg = convolve2D(blurredImg, kernel, padding=0)
-
-    # cv2.imshow("Original Image", img)
-    # cv2.imshow("Blurred Image", blurredImg)
-    cv2.imwrite("HW2/Shapes of Image.jpg", bwImg)
-
-
-    # OUTPUT = convolve2D(bwImg, tankShape, padding=0)
-
+def matchShape(image, shape, title, originalImage): 
     for i in range(1, 10):
-        print(i)
-        _tankShape = cv2.resize(tankShape, None, fx = i * .1, fy = i * .1)
+        _shape = cv2.resize(shape, None, fx = i * .1, fy = i * .1)
 
-        OUTPUT = convolve2D(bwImg, _tankShape, padding=int(_tankShape.shape[0]/2))
+        OUTPUT = convolve2D(image, _shape)
 
-        threshold_value = .99 * np.max(OUTPUT)
+        threshold_value = .99999 * np.max(OUTPUT)
         _, thresholded = cv2.threshold(OUTPUT, threshold_value, 255, cv2.THRESH_BINARY)
         nonzero = cv2.findNonZero(thresholded)
 
-        # Draw a rectangle around the matched area
         for pt in nonzero:
             x, y = pt[0]
-            h, w = _tankShape.shape
+            h, w = _shape.shape
             top_left = (x - w // 2, y - h // 2)
             bottom_right = (top_left[0] + w, top_left[1] + h)
-            cv2.rectangle(img, top_left, bottom_right, 255)
+            cv2.rectangle(originalImage, top_left, bottom_right, 255)
+    
+    cv2.imshow(title, originalImage)
 
-    print()
-    # Show the result
-    cv2.imshow('Matched Image', img)
+
+if __name__ == '__main__':
+
+    tankImage = cv2.imread('CroppedTank.jpg')
+    tankShape = processImage(tankImage)
+    cv2.imshow("TANK", tankShape)
+
+    pwd = os.path.dirname(__file__)
+    dir = pwd+"/Data/*.jpg"
+    images = getImages(dir)
+
+    imageShapes = []
+    for image in images:
+        img = cv2.cvtColor(src=image, code=cv2.COLOR_BGR2GRAY)
+        img = processImage(img)
+        imageShapes.append(img)
+
+    for i, img in enumerate(imageShapes):
+        matchShape(img, tankShape, str(i + 1), images[i])
+
     cv2.waitKey(0)
     cv2.destroyAllWindows()
